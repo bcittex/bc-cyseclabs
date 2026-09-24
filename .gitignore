@@ -1,0 +1,17 @@
+# Azure Bicep and deployment parameter secrets
+*.bicepparam.json
+.azure/
+azure-deploy-secrets.json
+
+# Local environment variables and secrets
+.env
+.env.local
+*.pem
+*.key
+secrets.txt
+passwords.txt
+
+# OS metadata and system junk
+.DS_Store
+Thumbs.db
+.vscode/
