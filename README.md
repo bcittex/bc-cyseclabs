@@ -12,4 +12,4 @@ This project simulates a secure hybrid enterprise environment.
 ### Infrastructure Components
 * **Resource Group:** `rg-security-lab-prod`
 * **Virtual Network:** `vnet-secure-prod` (Address Space: `10.0.0.0/16`)
-* **Core Subnet:** `snet-core-prod` (`10.0.1.0/24`) bound to a zero-trust NSG.
+* **Core Subnet:** `snet-secure-prod` (`10.0.1.0/24`) bound to a zero-trust NSG.
