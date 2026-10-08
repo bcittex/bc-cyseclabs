@@ -1,17 +1,8 @@
-targetScope = 'subscription'
+// network.bicep
+param location string
 
-param location string = 'eastus'
-param resourceGroupName string = 'rg-security-lab-prod'
-
-// 1. Create the Isolated Resource Group
-resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
-  name: resourceGroupName
-  location: location
-}
-
-// 2. Deploy Network Security Group & Rules inside the Resource Group 
+// 1. Deploy Network Security Group & Rules
 module securityResources 'br/public:avm/res/network/network-security-group:0.5.0' = {
-  scope: rg
   name: 'nsg-deploy'
   params: {
     name: 'nsg-core-prod'
@@ -35,9 +26,8 @@ module securityResources 'br/public:avm/res/network/network-security-group:0.5.0
   }
 }
 
-// 3. Deploy Virtual Network and Subnet linked to the NSG
+// 2. Deploy Virtual Network and Subnet linked to the NSG
 module vnetResources 'br/public:avm/res/network/virtual-network:0.5.1' = {
-  scope: rg
   name: 'vnet-deploy'
   params: {
     name: 'vnet-secure-prod'

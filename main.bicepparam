@@ -1,4 +1,4 @@
 using './main.bicep'
 
-param resourceGroupName = 'rg-my-app-dev'
+param resourceGroupName = 'rg-security-lab-prod'
 param location = 'eastus'

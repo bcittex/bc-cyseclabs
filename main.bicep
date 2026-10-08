@@ -1,20 +1,20 @@
 // main.bicep
 targetScope = 'subscription'
 
-param resourceGroupName string = 'rg-my-app-dev'
-param location string = 'eastus'
+param resourceGroupName string
+param location string
 
-// Create the resource group at subscription scope
+// Create the Resource Group
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: resourceGroupName
   location: location
 }
 
-// Deploy network.bicep into the created resource group
+// Deploy network module into the created Resource Group
 module network './network.bicep' = {
   name: 'networkDeployment'
+  scope: rg
   params: {
     location: location
-    resourceGroupName: resourceGroupName
   }
 }
