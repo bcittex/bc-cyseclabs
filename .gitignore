@@ -3,6 +3,9 @@
 .azure/
 azure-deploy-secrets.json
 
+# Ignore Bicep compiled ARM JSON templates
+*.json
+
 # Local environment variables and secrets
 .env
 .env.local
