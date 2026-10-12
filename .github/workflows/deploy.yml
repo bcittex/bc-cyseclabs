@@ -56,3 +56,4 @@ jobs:
           scope: subscription
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           template: ./main.bicep
+          region: eastus
