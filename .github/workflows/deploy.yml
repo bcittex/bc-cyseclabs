@@ -32,7 +32,7 @@ jobs:
           scope: subscription
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           template: ./main.bicep
-          parameters: ./parameters.bicep (or leave out if parameters are inline)
+          parameters: ./main.bicepparam
           what-if: true
 
   deploy:
@@ -50,10 +50,9 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy Bicep Infrastructure
-        uses: azure/arm-deploy@v2
-        with:
-          scope: subscription
-          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          template: ./main.bicep
-          region: eastus
+      - name: Deploy Bicep to Subscription Scope
+        run: |
+          az deployment sub create \
+            --location eastus \
+            --template-file ./main.bicep \
+            --parameters location=eastus resourceGroupName=rg-security-lab-prod
