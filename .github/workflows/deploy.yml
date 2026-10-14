@@ -2,17 +2,45 @@ name: Azure Bicep Deployment
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - 'main.bicep'
+      - '*.bicepparam'
+      - '.github/workflows/**'
   push:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - 'main.bicep'
+      - '*.bicepparam'
+      - '.github/workflows/**'
 
+# Required for OIDC. Without id-token: write, azure/login cannot get a token.
 permissions:
   id-token: write
   contents: read
 
+# Prevent two quick merges from deploying over each other.
+concurrency:
+  group: azure-deploy
+  cancel-in-progress: false
+
+env:
+  RESOURCE_GROUP: rg-security-lab-prod
+
 jobs:
+  validate:
+    name: Bicep Lint and Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Lint and build Bicep
+        run: az bicep build --file ./main.bicep --stdout > /dev/null
+
   what-if:
     name: Azure What-If Validation
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -26,14 +54,23 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Run Bicep What-If
-        run: az deployment sub what-if --location eastus --template-file ./main.bicep --parameters location=eastus resourceGroupName=rg-security-lab-prod
+        run: |
+          az deployment group what-if \
+            --resource-group "$RESOURCE_GROUP" \
+            --template-file ./main.bicep
 
   deploy:
     name: Deploy to Azure
+    needs: what-if
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # Optional approval gate. Uncomment after you create a "production"
+    # environment (Settings > Environments, add yourself as required reviewer)
+    # AND add a federated credential with subject
+    # repo:<owner>/<repo>:environment:production
+    # environment: production
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Log in to Azure via OIDC
@@ -43,9 +80,9 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy Bicep to Subscription Scope
+      - name: Deploy Bicep to Resource Group
         run: |
-          az deployment sub create \
-            --location eastus \
-            --template-file ./main.bicep \
-            --parameters location=eastus resourceGroupName=rg-security-lab-prod
+          az deployment group create \
+            --name "network-${{ github.run_number }}" \
+            --resource-group "$RESOURCE_GROUP" \
+            --template-file ./main.bicep
