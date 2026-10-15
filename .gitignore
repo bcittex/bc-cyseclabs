@@ -1,5 +1,7 @@
 # Azure Bicep and deployment parameter secrets
 *.bicepparam.json
+*.local.bicepparam
+main.json
 .azure/
 azure-deploy-secrets.json
 
@@ -18,3 +20,4 @@ passwords.txt
 .DS_Store
 Thumbs.db
 .vscode/
+main.json
