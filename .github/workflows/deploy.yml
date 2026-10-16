@@ -4,13 +4,13 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'main.bicep'
+      - '**.bicep'
       - '*.bicepparam'
       - '.github/workflows/**'
   push:
     branches: [main]
     paths:
-      - 'main.bicep'
+      - '**.bicep'
       - '*.bicepparam'
       - '.github/workflows/**'
 
