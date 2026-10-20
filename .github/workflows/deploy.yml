@@ -7,13 +7,14 @@ on:
       - '**.bicep'
       - '*.bicepparam'
       - '.github/workflows/**'
+      - '!iam/**'
   push:
     branches: [main]
     paths:
       - '**.bicep'
       - '*.bicepparam'
       - '.github/workflows/**'
-
+      - '!iam/**'
 # Required for OIDC. Without id-token: write, azure/login cannot get a token.
 permissions:
   id-token: write
