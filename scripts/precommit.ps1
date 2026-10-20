@@ -46,6 +46,11 @@ Step 'Bicep build and lint (compiles network.bicep too)'
 az bicep build --file main.bicep --stdout | Out-Null
 if ($LASTEXITCODE -eq 0) { Pass 'main.bicep compiles' } else { Fail 'Bicep build failed, see errors above' }
 
+if (Test-Path 'iam/main.bicep') {
+    az bicep build --file iam/main.bicep --stdout | Out-Null
+    if ($LASTEXITCODE -eq 0) { Pass 'iam/main.bicep compiles' } else { Fail 'iam/main.bicep failed to compile' }
+}
+
 # Parameter files must match the parameters declared in main.bicep
 foreach ($pf in (Get-ChildItem -Recurse -File -Filter *.bicepparam)) {
     az bicep build-params --file $pf.FullName --stdout | Out-Null
@@ -55,8 +60,12 @@ foreach ($pf in (Get-ChildItem -Recurse -File -Filter *.bicepparam)) {
 # 3. Stale references -------------------------------------------------------
 Step 'Stale reference scan'
 $textFiles = @($committable | Where-Object { $_ -match '\.(bicep|bicepparam|md|yml|yaml)$' })
-$stale = 'resourceGroupName|scope: rg|nsg-core-prod|vnet-secure-prod|snet-core-prod|10\.0\.1\.0|deployment sub |priority 4000|Priority 4000'
+$stale = 'resourceGroupName|scope: rg|nsg-core-prod|vnet-secure-prod|snet-core-prod|10\.0\.1\.0|priority 4000|Priority 4000'
 $hits = if ($textFiles) { Select-String -Path $textFiles -Pattern $stale } else { @() }
+# The network workflow must never use subscription-scope deployments (IAM under iam/ legitimately does)
+$wfFiles = @($textFiles | Where-Object { $_ -like '.github/*' })
+$wfHits = if ($wfFiles) { Select-String -Path $wfFiles -Pattern 'deployment sub ' } else { @() }
+$hits = @($hits) + @($wfHits)
 if ($hits) {
     Fail 'Stale references found:'
     $hits | ForEach-Object { Write-Host "  $($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
@@ -66,7 +75,7 @@ if ($hits) {
 
 # 4. Secrets and identifiers ------------------------------------------------
 Step 'Secret and ID scan (committable files only)'
-$scanFiles = @($committable | Where-Object { $_ -match '\.(bicep|bicepparam|md|yml|yaml|json)$' })
+$scanFiles = @($committable | Where-Object { $_ -match '\.(bicep|bicepparam|md|yml|yaml|json|ps1)$' -and $_ -ne 'scripts/precommit.ps1' })
 
 # High signal: your own subscription and tenant IDs must never appear.
 $sub = az account show --query id -o tsv 2>$null
@@ -84,7 +93,8 @@ if ($LASTEXITCODE -eq 0 -and $sub) {
 }
 
 # Secret-like strings
-$secret = 'client_secret|clientSecret|password\s*[:=]|accountkey|sig=|PRIVATE KEY'
+# Flags literal credentials only (a quoted value after "password =" or "--password"), not variables like $password.
+$secret = 'client_secret|clientSecret|password\s*[:=]\s*[''"][^''"$\s][^''"]*[''"]|--password\s+[''"][^''"$][^''"]*[''"]|accountkey|sig=|PRIVATE KEY'
 $sec = if ($scanFiles) { Select-String -Path $scanFiles -Pattern $secret } else { @() }
 if ($sec) {
     Fail 'Secret-like strings found:'
